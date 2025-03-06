@@ -1,0 +1,118 @@
+Yes! In saveQuery, the CLOB is created for listedQuery.getQuerySql(), which contains the SQL query being saved.
+
+Since saveViewConfig also has a call to saveUserLog, it is likely that the equivalent text field for the CLOB in saveViewConfig is the log message or some text-based configuration data.
+
+What We Can Do:
+
+Instead of view.getConfigData(), we can use the same log message that is passed to saveUserLog as the CLOB content. This would be:
+
+String comments = "viewId-" + viewId + "-viewName-" + view.getName() +
+                  "-tableName-" + view.getTableName() +
+                  "-category-" + view.getCategory() +
+                  "-subCategory-" + view.getSubCategory();
+
+Since this comments string holds structured text data, it could be the correct candidate for the CLOB.
+
+
+---
+
+Updated saveViewConfig (Using comments as CLOB Data)
+
+public ResponseData saveViewConfig(View view, String userName) throws ServiceException, SQLException {
+    ResponseData res = new ResponseData();
+    Connection connection = null;
+    CallableStatement callableStatement = null;
+    DataSource dataSource = jdbcTemplate.getDataSource();
+    String viewId = null;
+
+    try {
+        connection = dataSource.getConnection();
+        OracleConnection oracleConnection = DBUtility.getOracleConnection(connection);
+
+        callableStatement = connection.prepareCall(IRIS_PKG_VIEW_SCR_PR_SAVE_MODIFY_VIEW_SQL);
+
+        // Convert View object into Oracle array structure
+        Array viewStructArray = getViewStructArray(view, oracleConnection);
+
+        callableStatement.setArray(1, viewStructArray);
+        callableStatement.setString(2, userName);
+        callableStatement.registerOutParameter(3, OracleTypes.VARCHAR);
+        callableStatement.registerOutParameter(4, OracleTypes.VARCHAR);
+        callableStatement.registerOutParameter(5, OracleTypes.VARCHAR);
+        callableStatement.setString(6, view.getCategory());
+        callableStatement.setString(7, view.getSubCategory());
+
+        // Create a CLOB for logging or configuration data
+        Clob viewClob = oracleConnection.createClob();
+        String comments = "viewId-" + viewId + "-viewName-" + view.getName() +
+                          "-tableName-" + view.getTableName() +
+                          "-category-" + view.getCategory() +
+                          "-subCategory-" + view.getSubCategory();
+        viewClob.setString(1, comments);
+
+        callableStatement.setClob(8, viewClob); // Set CLOB parameter
+
+        callableStatement.execute();
+
+        String status = callableStatement.getString(4);
+        if (status.equalsIgnoreCase(SUCCESS)) {
+            viewId = callableStatement.getString(3);
+
+            // Log user action
+            saveUserLog(USER_LOG_SCREEN_NAME, USER_LOG_SAVE_VIEW, userName, comments);
+        } else {
+            String errorMessage = "Failed: " + callableStatement.getString(5);
+            res.setHttpStatus(HttpStatus.ACCEPTED);
+            res.setData(errorMessage);
+            return res;
+        }
+
+        res.setHttpStatus(HttpStatus.OK);
+        res.setData(viewId);
+        return res;
+
+    } catch (Exception e) {
+        throw new ServiceException("Error in saveViewConfig(): ", e);
+    } finally {
+        DbUtils.closeQuietly(connection);
+        DbUtils.closeQuietly(callableStatement);
+    }
+}
+
+
+---
+
+Changes & Fixes:
+
+1. Uses the comments string as the CLOB value
+
+This is similar to how listedQuery.getQuerySql() is used in saveQuery.
+
+If the stored procedure expects a CLOB, this should resolve ORA-21710.
+
+
+
+2. Ensures the CLOB is created properly before being passed to the stored procedure.
+
+
+3. Uses callableStatement.setClob(8, viewClob);
+
+Make sure that the 8th parameter in your stored procedure is intended for this purpose.
+
+
+
+
+
+---
+
+Next Steps:
+
+Test if the error disappears.
+
+Check the stored procedure signature to confirm the 8th parameter is expecting text (CLOB).
+
+If the stored procedure expects something else (e.g., an XML/JSON CLOB), adjust the comments value accordingly.
+
+
+Let me know if you need any more refinements!
+
