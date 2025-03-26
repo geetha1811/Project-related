@@ -65,3 +65,105 @@ This cleaner, more efficient approach ensures that Arranged Financing appears au
 
 Try it and let me know if you need more tweaks! 🚀
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Yes! We can disable the Arranged Financing input initially and enable it dynamically when the user selects "SGP" or "USA". This will also prevent the ExpressionChangedAfterItHasBeenCheckedError.
+
+
+---
+
+✅ Solution: Disable Input Initially & Enable Dynamically
+
+🔹 Update Your TypeScript (.ts)
+
+export class YourComponent {
+  bookingBranch: string = ''; // Holds selected booking branch ID
+  arrangedFinancingBdrId: string = ''; // Holds input value
+  bookingBranchesData: any[] = []; // Ensure this gets populated
+
+  get isArrangedFinancingEnabled(): boolean {
+    if (!this.bookingBranch || !this.bookingBranchesData.length) return false;
+
+    const selectedBranch = this.bookingBranchesData.find(
+      (branch) => branch.bookingBranchId?.trim() === this.bookingBranch?.trim()
+    );
+
+    return (
+      selectedBranch?.bookingBranchCode === 'SGP SOCIETE GENERALE SA' ||
+      selectedBranch?.bookingBranchCode === 'USA SG AMERICAS SECURITIES'
+    );
+  }
+}
+
+
+---
+
+🔹 Update Your HTML (.html)
+
+Modify the input field to use the [disabled] property:
+
+<div class="col-sm-3" *ngIf="this.basicType === 'AGENCY'">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+
+    <input
+      type="text"
+      class="form-control text-style"
+      formControlName="arrangedFinancingBdrId"
+      [(ngModel)]="arrangedFinancingBdrId"
+      (ngModelChange)="getElementList();"
+      [ngbTypeahead]="search"
+      [inputFormatter]="formatter"
+      [disabled]="!isArrangedFinancingEnabled"  <!-- Disable if condition is false -->
+    />
+  </div>
+</div>
+
+
+---
+
+✅ How This Works
+
+1. Initially → Arranged Financing input is disabled
+
+
+2. User Selects SGP or USA → Arranged Financing input becomes enabled
+
+
+3. User Selects Any Other Branch → Arranged Financing remains disabled
+
+
+4. No ExpressionChangedAfterItHasBeenCheckedError
+
+
+
+
+---
+
+🚀 Final Behavior
+
+✔ SGP or USA selected → Input is enabled
+❌ Other branches → Input remains disabled
+✔ No Errors, No UI Glitches
+
+This should work perfectly. Let me know if you need any adjustments! 🚀
+
