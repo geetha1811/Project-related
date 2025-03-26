@@ -191,3 +191,85 @@ isAFEnabled(): boolean {
 🚀 Try this and let me know if it's working as expected!
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Got it! You only need to enable Arranged Financing when the booking branch code is SGP or USA, without modifying anything else.
+
+
+---
+
+✅ Solution: Update Arranged Financing Code Only
+
+Modify only Arranged Financing without touching booking branch.
+
+
+---
+
+1️⃣ TypeScript (Inside createBasic.component.ts)
+
+Add a function to check if Arranged Financing should be enabled:
+
+isAFEnabled(): boolean {
+  if (!this.bookingBranch || !this.bookingBranchesData) {
+    return false; // No booking branch selected, so disable Arranged Financing
+  }
+
+  const branchValue = this.bookingBranchesData.find(
+    branch => branch.bookingBranchId === this.bookingBranch
+  );
+
+  if (!branchValue) {
+    return false; // If booking branch is not found, disable Arranged Financing
+  }
+
+  const bookingCode = branchValue.bookingBranchCode?.trim().toUpperCase();
+  return bookingCode === "SGP" || bookingCode === "USA"; // Enable only for SGP & USA
+}
+
+
+---
+
+2️⃣ Modify Arranged Financing HTML
+
+Update only the disabled condition for Arranged Financing:
+
+<div class="col-sm-3" *ngIf="this.basicType === 'AGENCY'">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+    <input type="text" class="form-control text-style"
+      formControlName="arrangedFinancingBdrId"
+      placeholder="Search Af_bdr_Id"
+      [(ngModel)]="arrangedFinancingBdrId"
+      [disabled]="!isAFEnabled()"
+      (ngModelChange)="getElementList();"
+      [ngbTypeahead]="search"
+      [inputFormatter]="formatter"/>
+  </div>
+</div>
+
+
+---
+
+🔥 Why This Works
+
+✔ Keeps Arranged Financing disabled by default
+✔ Enables it only if booking branch code is "SGP" or "USA"
+✔ Does NOT modify the booking branch component
+✔ No ExpressionChangedAfterItHasBeenCheckedError
+
+🚀 Try this and let me know if it works!
+
+
+
