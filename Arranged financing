@@ -1,0 +1,88 @@
+The ExpressionChangedAfterItHasBeenCheckedError occurs when Angular detects a change in a bound value after the change detection cycle has already run. To fix this, update the isArrangedFinancingEnabled() logic without triggering this error.
+
+
+---
+
+✅ Solution 1: Use setTimeout to Avoid ExpressionChangedAfterItHasBeenCheckedError
+
+Modify your TypeScript function like this:
+
+isArrangedFinancingEnabled(): boolean {
+  let isEnabled = false;
+
+  setTimeout(() => {
+    const selectedBranch = this.bookingBranchesData?.find(
+      branch => branch.bookingBranchId === this.bookingBranch
+    );
+
+    isEnabled = !!(selectedBranch && (selectedBranch.bookingBranchCode === "SGP" || selectedBranch.bookingBranchCode === "USA"));
+  });
+
+  return isEnabled;
+}
+
+🔹 Why does this work?
+
+setTimeout defers execution until after the current change detection cycle.
+
+It ensures Angular doesn’t detect a mid-cycle change.
+
+
+
+---
+
+✅ Solution 2: Store the Value in a Variable & Update it Properly
+
+Instead of calling isArrangedFinancingEnabled() directly in the template, update a variable when the booking branch changes.
+
+Modify HTML
+
+<div class="col-sm-3" *ngIf="arrangedFinancingEnabled">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+    <input 
+      type="text" 
+      class="form-control text-style"
+      formControlName="arrangedFinancingBdrId"
+      placeholder="Search Af_bdr_Id"
+      [(ngModel)]="arrangedFinancingBdrId"
+      (ngModelChange)="getElementList();"
+      [ngbTypeahead]="search"
+      [inputFormatter]="formatter"
+    />
+  </div>
+</div>
+
+Modify TypeScript
+
+arrangedFinancingEnabled: boolean = false;
+
+updateArrangedFinancingState(): void {
+  setTimeout(() => {
+    const selectedBranch = this.bookingBranchesData?.find(
+      branch => branch.bookingBranchId === this.bookingBranch
+    );
+
+    this.arrangedFinancingEnabled = !!(selectedBranch && (selectedBranch.bookingBranchCode === "SGP" || selectedBranch.bookingBranchCode === "USA"));
+  });
+}
+
+Call updateArrangedFinancingState() Whenever Booking Branch Changes
+
+<select formControlName="bookingBranch" [(ngModel)]="bookingBranch" (ngModelChange)="updateArrangedFinancingState()">
+  <option *ngFor="let booking of bookingBranchesData" [value]="booking.bookingBranchId">
+    {{ booking.bookingBranchCode }}
+  </option>
+</select>
+
+
+---
+
+🎯 Key Takeaways
+
+✅ Solution 1 (setTimeout) is a quick fix if you need minimal changes.
+✅ Solution 2 (arrangedFinancingEnabled variable) is a better, long-term solution.
+✅ No Errors ✅ No Change Detection Issues ✅ Clean Code
+
+Let me know if you need further refinements! 🚀
+
