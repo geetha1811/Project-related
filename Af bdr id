@@ -1,0 +1,77 @@
+Yes! You can use *ngIf to conditionally show the Arranged Financing input only when the booking branch code is SGP or USA.
+
+
+---
+
+🔹 Modify HTML Using *ngIf
+
+<div class="col-sm-3" *ngIf="this.basicType === 'AGENCY' && isAFEnabled()">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+
+    <input type="text"
+           class="form-control text-style"
+           formControlName="arrangedFinancingBdrId"
+           placeholder="Search Af_bdr_Id"
+           [(ngModel)]="arrangedFinancingBdrId"
+           (ngModelChange)="getElementList();"
+           [ngbTypeahead]="search"
+           [inputFormatter]="formatter"
+           [resultTemplate]="rt"/>
+
+    <ng-template #rt let-r="result" let-t="term">
+      {{ r.ecDesc }}
+    </ng-template>
+  </div>
+</div>
+
+
+---
+
+🔹 Create isAFEnabled() Function
+
+Modify your TypeScript file to define this function:
+
+isAFEnabled(): boolean {
+  console.log("Checking if Arranged Financing should be enabled...");
+
+  if (!this.bookingBranch) {
+    console.log("No booking branch selected. Hiding Arranged Financing.");
+    return false;
+  }
+
+  if (!this.bookingBranchesData || this.bookingBranchesData.length === 0) {
+    console.log("Booking Branch Data is missing. Hiding Arranged Financing.");
+    return false;
+  }
+
+  const branchValue = this.bookingBranchesData.find(
+    booking => booking.bookingBranchId === this.bookingBranch
+  );
+
+  console.log("Selected Booking Branch:", branchValue);
+
+  if (!branchValue) {
+    console.log("Branch not found. Hiding Arranged Financing.");
+    return false;
+  }
+
+  // Normalize booking branch code
+  const bookingCode = branchValue.bookingBranchCode?.trim().toUpperCase();
+  console.log("Booking Branch Code Found:", bookingCode);
+
+  // Show input only for 'SGP' or 'USA'
+  return bookingCode === "SGP" || bookingCode === "USA";
+}
+
+
+---
+
+✅ Expected Behavior
+
+✔ Initially, Arranged Financing is hidden
+✔ When the booking branch code is 'SGP' or 'USA', the input appears
+✔ If the user selects any other branch, the input disappears
+
+Try it now and check if it's working as expected! 🚀
+
