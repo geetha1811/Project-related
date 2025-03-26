@@ -1,0 +1,102 @@
+🔍 Issue: ExpressionChangedAfterItHasBeenCheckedError
+
+This error happens because Angular's change detection detects a change in ngIf after the initial check, causing inconsistency.
+
+
+---
+
+🔧 Solution: Use setTimeout() to Defer the Change
+
+Modify isAFEnabled() so that it updates after the current change detection cycle.
+
+isAFEnabled(): boolean {
+  console.log("Checking if Arranged Financing should be enabled...");
+
+  if (!this.bookingBranch) {
+    console.log("No booking branch selected. Hiding Arranged Financing.");
+    return false;
+  }
+
+  if (!this.bookingBranchesData || this.bookingBranchesData.length === 0) {
+    console.log("Booking Branch Data is missing. Hiding Arranged Financing.");
+    return false;
+  }
+
+  const branchValue = this.bookingBranchesData.find(
+    booking => booking.bookingBranchId === this.bookingBranch
+  );
+
+  console.log("Selected Booking Branch:", branchValue);
+
+  if (!branchValue) {
+    console.log("Branch not found. Hiding Arranged Financing.");
+    return false;
+  }
+
+  // 🔹 Normalize booking branch code & check for SGP or USA anywhere in the string
+  const bookingCode = branchValue.bookingBranchCode?.trim().toUpperCase();
+  console.log("Booking Branch Code Found:", bookingCode);
+
+  let isEnabled = bookingCode.includes("SGP") || bookingCode.includes("USA");
+
+  // 🔥 FIX: Use `setTimeout` to avoid Angular expression error
+  setTimeout(() => {
+    this.arrangedFinancingEnabled = isEnabled;
+  });
+
+  return isEnabled;
+}
+
+
+---
+
+🔹 Modify HTML to Use the New Variable
+
+Instead of calling isAFEnabled() in ngIf, use the variable arrangedFinancingEnabled.
+
+<div class="col-sm-3" *ngIf="arrangedFinancingEnabled">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+    <input type="text" class="form-control text-style"
+      formControlName="arrangedFinancingBdrId"
+      placeholder="Search Af_bdr_Id"
+      [(ngModel)]="arrangedFinancingBdrId"
+      [disabled]="!arrangedFinancingEnabled"
+      (ngModelChange)="getElementList();"
+      [ngbTypeahead]="search"
+      [inputFormatter]="formatter"/>
+  </div>
+</div>
+
+
+---
+
+✅ Expected Fix
+
+✔ No more ExpressionChangedAfterItHasBeenCheckedError
+✔ Booking branch selection won’t disappear
+✔ Arranged Financing appears only when booking branch is SGP or USA
+✔ It stays disabled otherwise
+
+
+---
+
+🚀 Next Steps
+
+1. Apply the updated isAFEnabled() function
+
+
+2. Use arrangedFinancingEnabled in the HTML instead of calling the function in ngIf
+
+
+3. Test and confirm the logs:
+
+"Booking Branch Code Found: SGP"
+
+"Arranged Financing Enabled: true"
+
+
+
+
+Try it now and let me know the result! 🔥
+
