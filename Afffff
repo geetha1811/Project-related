@@ -87,3 +87,132 @@ How This Works
 
 Let me know if you still face issues!
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Got it! You want to display (or enable) the Arranged Financing field only when the exact bookingBranchCode is either:
+
+1. SGP SOCIETE GENERALE SA
+
+
+2. USA SG AMERICAS SECURITIES
+
+
+
+
+---
+
+Solution: Ensure Exact Matching & Debug Selection
+
+1. Update TypeScript Logic (.ts)
+
+Modify your method to ensure exact string matching and debug the values:
+
+selectedBookingBranchId: string = '';
+selectedBookingBranchCode: string = '';
+showArrangedFinancing: boolean = false;
+
+setBookingBranchCode() {
+  if (!this.bookingBranchesData || this.bookingBranchesData.length === 0) {
+    console.warn('bookingBranchesData is empty or not loaded yet.');
+    return;
+  }
+
+  console.log('Booking Branches Data:', this.bookingBranchesData);
+  console.log('Selected Booking Branch ID:', this.selectedBookingBranchId);
+
+  // Find the selected branch using bookingBranchId
+  const selectedBranch = this.bookingBranchesData.find(
+    (branch) => branch.bookingBranchId?.trim() === this.selectedBookingBranchId?.trim()
+  );
+
+  // Ensure branch code is retrieved
+  if (selectedBranch) {
+    this.selectedBookingBranchCode = selectedBranch.bookingBranchCode || '';
+  } else {
+    this.selectedBookingBranchCode = '';
+    console.warn('No matching branch found for ID:', this.selectedBookingBranchId);
+  }
+
+  console.log('Selected Branch Code:', this.selectedBookingBranchCode);
+
+  // Exact match check for SGP or USA branches
+  this.showArrangedFinancing =
+    this.selectedBookingBranchCode === 'SGP SOCIETE GENERALE SA' ||
+    this.selectedBookingBranchCode === 'USA SG AMERICAS SECURITIES';
+
+  console.log('Show Arranged Financing:', this.showArrangedFinancing);
+}
+
+
+---
+
+2. Update the Dropdown (.html)
+
+Ensure ngModel updates the selected ID and triggers the function:
+
+<select class="form-control" [(ngModel)]="selectedBookingBranchId" (change)="setBookingBranchCode()">
+  <option *ngFor="let booking of bookingBranchesData" [value]="booking.bookingBranchId">
+    {{ booking.bookingBranchCode }}
+  </option>
+</select>
+
+
+---
+
+3. Update Arranged Financing Field (.html)
+
+Ensure the field appears only when SGP or USA is selected:
+
+<div class="col-sm-3" *ngIf="this.basicType === 'AGENCY' && showArrangedFinancing">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+
+    <input type="text" class="form-control text-style"
+           formControlName="arrangedFinancingBdrId"
+           [(ngModel)]="arrangedFinancingBdrId"
+           (ngModelChange)="getElementList();"
+           [ngbTypeahead]="search"
+           [inputFormatter]="formatter"/>
+  </div>
+</div>
+
+
+---
+
+How This Works
+
+✅ Exact match with bookingBranchCode.
+✅ No case mismatch issues.
+✅ Debugging logs to verify correct values are selected.
+
+Now, when you select:
+✔ SGP SOCIETE GENERALE SA → The field appears.
+✔ USA SG AMERICAS SECURITIES → The field appears.
+❌ Any other branch → The field stays hidden.
+
+Try this and check the console logs to confirm the correct values are being selected! 🚀
+
+
