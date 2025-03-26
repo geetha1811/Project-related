@@ -1,0 +1,67 @@
+Yes! You can use a getter function instead of BehaviorSubject or setTimeout(). This approach ensures that the UI updates dynamically without triggering ExpressionChangedAfterItHasBeenCheckedError.
+
+
+---
+
+✅ Solution: Use a Getter Instead of a Variable
+
+Instead of manually updating showArrangedFinancing, we define it as a getter.
+
+🔹 Update Your TypeScript (.ts)
+
+export class YourComponent {
+  bookingBranch: string = ''; // Holds selected booking branch ID
+  arrangedFinancingBdrId: string = ''; // Holds input value
+  bookingBranchesData: any[] = []; // Ensure this gets populated
+
+  get showArrangedFinancing(): boolean {
+    if (!this.bookingBranch || !this.bookingBranchesData.length) return false;
+
+    const selectedBranch = this.bookingBranchesData.find(
+      (branch) => branch.bookingBranchId?.trim() === this.bookingBranch?.trim()
+    );
+
+    return (
+      selectedBranch?.bookingBranchCode === 'SGP SOCIETE GENERALE SA' ||
+      selectedBranch?.bookingBranchCode === 'USA SG AMERICAS SECURITIES'
+    );
+  }
+}
+
+
+---
+
+🔹 Update Your HTML (.html)
+
+Modify the *ngIf condition to use the getter function directly:
+
+<div class="col-sm-3" *ngIf="this.basicType === 'AGENCY' && showArrangedFinancing">
+  <div class="form-group">
+    <span class="span-text">Arranged Financing BDR ID</span>
+
+    <input
+      type="text"
+      class="form-control text-style"
+      formControlName="arrangedFinancingBdrId"
+      [(ngModel)]="arrangedFinancingBdrId"
+      (ngModelChange)="getElementList();"
+      [ngbTypeahead]="search"
+      [inputFormatter]="formatter"
+    />
+  </div>
+</div>
+
+
+---
+
+✅ Why This Works
+
+✔ No More ExpressionChangedAfterItHasBeenCheckedError
+✔ No Need for setTimeout(), ChangeDetectorRef, or BehaviorSubject
+✔ Automatic UI Updates Without Extra Code
+✔ No Unnecessary Change Detection Calls
+
+This cleaner, more efficient approach ensures that Arranged Financing appears automatically when SGP or USA is selected, without modifying the booking branch.
+
+Try it and let me know if you need more tweaks! 🚀
+
