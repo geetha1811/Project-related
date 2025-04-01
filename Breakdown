@@ -1,0 +1,73 @@
+downloadBreakdownData() {
+    let fileName = `${this.breakdownViewCode}${this.selectedName}${this.businessDate1}`;
+
+    if (this.businessDate2) {
+        fileName += `${this.businessDate2}`;
+    }
+
+    fileName += `.xlsx`;
+
+    this.breakdownGrid.api.exportDataAsExcel({
+        fileName,
+        sheetName: 'Sheet1',
+        processCellCallback: params => {
+            const value = params.value;
+
+            if (value === null || value === undefined || value === '') {
+                return ''; // Empty value
+            }
+
+            if (!isNaN(value)) {
+                // Ensure numeric value is formatted as "1,234,567.89" for Excel
+                return Number(value).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            if (typeof value === 'string') {
+                // Remove commas and convert to number, then format
+                const cleanedValue = value.replace(/,/g, '');
+                if (!isNaN(cleanedValue)) {
+                    return Number(cleanedValue).toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+            }
+
+            return value; // Return non-numeric values as is
+        },
+        autoSizeColumns: true
+    });
+}
+
+// For UI Formatting
+response.headerSet.forEach((header, index) => {
+    let cellValue = row[index];
+
+    if (header !== 'BDR_LEGAL_ENTITY_ID' && cellValue != null) {
+        if (!isNaN(cellValue)) {
+            // Format numeric value as "1,234,567.89" for UI
+            const numericValue = parseFloat(parseFloat(cellValue).toFixed(2));
+            cellValue = new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(numericValue);
+        } else if (typeof cellValue === 'string') {
+            // Remove commas, convert to number, and format
+            const cleanedValue = cellValue.replace(/,/g, '');
+            if (!isNaN(cleanedValue)) {
+                const numericValue = parseFloat(parseFloat(cleanedValue).toFixed(2));
+                cellValue = new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(numericValue);
+            }
+        }
+    }
+
+    rowDataObj[header] = cellValue;
+});
+
+return rowDataObj;
