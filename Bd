@@ -1,0 +1,157 @@
+To ensure the numbers in the Excel sheet are displayed in the EN-US number format (with commas for thousands and periods for decimals) and right-aligned, you need to make sure that:
+
+1. Excel treats the value as a numeric value, not a string.
+
+
+2. Excel applies the correct number formatting for the columns with numbers.
+
+
+
+Here's an updated approach to achieve your goal:
+
+Steps for Solution:
+
+Ensure that numeric values are treated as numbers (so they are right-aligned).
+
+Use a processCellCallback function in the exportDataAsExcel method to ensure the numbers are formatted with commas and decimals correctly while being recognized as numbers by Excel.
+
+
+Updated Code:
+
+downloadBreakdownData() {
+  let fileName = `${this.breakdownViewCode}_${this.selectedName}_${this.businessDate1}`;
+
+  if (this.businessDate2) {
+    fileName += `_${this.businessDate2}`;
+  }
+
+  fileName += `.xlsx`;
+
+  console.log('Starting export to Excel with file name:', fileName);
+
+  this.breakdownGrid.api.exportDataAsExcel({
+    fileName,
+    sheetName: 'Sheet1',
+    processCellCallback: (params) => {
+      let value = params.value;
+
+      console.log('Processing cell value:', value);  // Log the value before processing
+
+      // If value is null or undefined, return an empty value
+      if (value === null || value === undefined || value === '') {
+        console.log('Value is null, undefined, or empty. Returning empty string.');
+        return '';
+      }
+
+      // For non-numeric values (like strings), return them as they are
+      if (isNaN(value) || typeof value === 'boolean') {
+        console.log('Value is not numeric, returning it as is:', value);
+        return value;
+      }
+
+      // Convert to a number, remove commas, and round if needed
+      let numericValue = parseFloat(value.toString().replace(/,/g, ''));
+      console.log('Converted numeric value:', numericValue);  // Log the numeric value after conversion
+
+      // Return the number so Excel can treat it as numeric (right-aligned)
+      return {
+        value: numericValue,
+        dataType: 'number' // This ensures Excel treats it as a number
+      };
+    },
+    autoSizeColumns: true,
+    columnStyles: {
+      // You can explicitly define the styles for numeric columns (optional)
+      // This is useful if you know the columns will have specific number formats
+      // e.g., for the "Amount" column
+      'Amount': {
+        numberFormat: '#,##0.00'  // Apply EN-US formatting with 2 decimal places
+      }
+    }
+  });
+
+  console.log('Export process initiated.');
+}
+
+response.headerSet.forEach((header: string, index: number) => {
+  let cellValue = row[index];
+
+  console.log(`Processing header: ${header}, value: ${cellValue}`);  // Log the header and value
+
+  // Exclude 'BDR_LEGAL_ENTITY_ID' from number formatting
+  if (header !== 'BDR_LEGAL_ENTITY_ID' && !isNaN(cellValue) && cellValue != null) {
+    // Format numbers to two decimal places and add commas (in UI)
+    cellValue = parseFloat(cellValue).toFixed(2);
+    console.log(`Formatted number value (2 decimals): ${cellValue}`);  // Log the formatted value
+
+    cellValue = new Intl.NumberFormat('en-US').format(cellValue);
+    console.log(`Formatted value with commas (UI): ${cellValue}`);  // Log the value with commas
+  }
+
+  rowDataObj[header] = cellValue;
+});
+
+console.log('Returning row data object:', rowDataObj);  // Log the final row data object
+return rowDataObj;
+
+Key Changes and Explanations:
+
+1. Ensure Numeric Formatting in processCellCallback:
+
+This callback function ensures that any numeric value is properly treated as a number, and commas are added for the UI formatting.
+
+The dataType: 'number' ensures that Excel will treat it as a number (which should align it to the right in Excel).
+
+
+
+2. Column Styles (columnStyles):
+
+You can optionally define specific number formatting for certain columns. In the above example, I applied the EN-US format (#,##0.00) for columns like "Amount". You can adjust this to match the actual column names.
+
+This ensures that the numeric columns are displayed with commas for thousands and two decimal places.
+
+
+
+3. General Numeric Handling:
+
+Numbers are formatted with commas for thousands and two decimal places using Intl.NumberFormat('en-US').
+
+Values are parsed to numeric types to avoid being interpreted as strings.
+
+
+
+
+Expected Result in Excel:
+
+Numeric values will be right-aligned in Excel.
+
+The values will have commas for thousands and two decimal places.
+
+Non-numeric values will remain as they are, with no formatting changes.
+
+
+What to Look For in Excel:
+
+1. Right Alignment: The numeric values should appear right-aligned, indicating that Excel recognizes them as numbers.
+
+
+2. Comma-Separated Format: The values should display thousands separators (commas) and two decimal places (e.g., 12,345.67).
+
+
+3. Non-Numeric Values: Any non-numeric values (like text) will remain unchanged and will be left-aligned in Excel.
+
+
+
+Console Logs:
+
+The logs will help you verify the values being processed and the final formatted values. For example:
+
+Processing cell value: 1234567.89
+Converted numeric value: 1234567.89
+Formatted value with commas (UI): 1,234,567.89
+Returning row data object: { 'Amount': '1,234,567.89', ... }
+
+This will confirm that the value is processed correctly and formatted as expected.
+
+Let me know how it works out or if you need further help!
+
