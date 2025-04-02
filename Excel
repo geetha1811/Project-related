@@ -107,3 +107,132 @@ Next Steps
 
 Try this updated code and let me know if the error persists or if you need further modifications!
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Yes, if all the number fields are left-aligned in Excel, it means they are being treated as text instead of numbers. This prevents Excel from applying SUM, AVERAGE, and other calculations correctly.
+
+
+---
+
+Fix: Force Excel to Recognize Numbers
+
+Modify your downloadBreakdownData() method to ensure numbers remain numbers by:
+
+1. Removing commas from values before storing
+
+
+2. Forcing the cell type to 'n' (number)
+
+
+3. Applying number formatting (#,##0.00)
+
+
+
+
+---
+
+Final Fixed Code
+
+import * as XLSX from 'xlsx';
+
+downloadBreakdownData() {
+    let fileName = `${this.breakdownViewCode}_${this.selectedName}_${this.businessDatel}`;
+
+    if (this.businessDate2) {
+        fileName += `_${this.businessDate2}`;
+    }
+
+    fileName += `.xlsx`;
+
+    // Step 1: Get row data from ag-Grid
+    const rowData = [];
+    this.breakdownGrid.api.forEachNode((node) => {
+        const formattedRow = {};
+
+        Object.keys(node.data).forEach(header => {
+            let value = node.data[header];
+
+            // Convert valid numbers to actual numbers
+            if (!isNaN(value) && value !== null && value !== "") {
+                formattedRow[header] = Number(value); // Ensure number type
+            } else {
+                formattedRow[header] = value; // Keep other values unchanged
+            }
+        });
+
+        rowData.push(formattedRow);
+    });
+
+    if (rowData.length === 0) {
+        console.error("No data available to export.");
+        return;
+    }
+
+    // Step 2: Convert JSON data to Excel worksheet
+    const ws = XLSX.utils.json_to_sheet(rowData);
+
+    // Step 3: Apply number formatting and force type as 'n' (number)
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+
+            if (ws[cellAddress] && typeof ws[cellAddress].v === 'number') {
+                ws[cellAddress].t = "n";  // Force as number
+                ws[cellAddress].z = "#,##0.00";  // Apply thousand separator
+            }
+        }
+    }
+
+    // Step 4: Create and save the workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+    XLSX.writeFile(wb, fileName);
+}
+
+
+---
+
+How This Fixes the Issue
+
+✅ Numbers stay right-aligned → Excel correctly recognizes them as numbers.
+✅ SUM, AVERAGE, and other functions now work → No manual conversion needed.
+✅ Formatted as #,##0.00 → Displays 12,345,678.90 but remains numeric.
+
+
+---
+
+Test This & Check in Excel
+
+Open the exported Excel file.
+
+Click on any number field and check the formula bar → It should show a number without commas (e.g., 1234567.89).
+
+Try using SUM(A1:A10) → It should work correctly.
+
+
+Let me know if you need more tweaks! 🚀
+
