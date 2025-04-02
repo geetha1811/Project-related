@@ -1,0 +1,109 @@
+The error "Invalid workbook" suggests that the workbook object is not being correctly created or populated before calling XLSX.writeFile().
+
+Possible Causes of "Invalid Workbook"
+
+1. Incorrect Workbook Creation: The wb (workbook) object must be correctly initialized before writing to a file.
+
+
+2. No Data in the Worksheet: If ws (worksheet) is empty or incorrectly formatted, the workbook will be invalid.
+
+
+3. Wrong XLSX API Usage: Ensure that the worksheet is properly added to the workbook.
+
+
+4. Incorrect Handling of exportDataAsExcel Output: The data from ag-Grid needs to be properly converted into a worksheet.
+
+
+
+
+---
+
+Fix: Correct Workbook and Worksheet Creation
+
+Here’s the corrected version of your downloadBreakdownData function using xlsx:
+
+import * as XLSX from 'xlsx';
+
+downloadBreakdownData() {
+    let fileName = `${this.breakdownViewCode}_${this.selectedName}_${this.businessDatel}`;
+
+    if (this.businessDate2) {
+        fileName += `_${this.businessDate2}`;
+    }
+
+    fileName += `.xlsx`;
+
+    // Step 1: Get the row data from ag-Grid
+    const rowData = [];
+    this.breakdownGrid.api.forEachNode((node) => {
+        rowData.push(node.data);
+    });
+
+    if (rowData.length === 0) {
+        console.error("No data available to export.");
+        return;
+    }
+
+    // Step 2: Convert data into Excel sheet format
+    const ws = XLSX.utils.json_to_sheet(rowData);
+
+    // Step 3: Apply number formatting to columns
+    const range = XLSX.utils.decode_range(ws["!ref"]);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+
+            if (ws[cellAddress] && typeof ws[cellAddress].v === 'number') {
+                ws[cellAddress].z = "#,##0.00"; // Apply number formatting
+            }
+        }
+    }
+
+    // Step 4: Create a new workbook and add the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+
+    // Step 5: Save the Excel file
+    XLSX.writeFile(wb, fileName);
+}
+
+
+---
+
+How This Fixes the Issue
+
+1. Properly Fetches Data → Uses forEachNode() to get dynamic row data from ag-Grid.
+
+
+2. Validates Data Before Export → If no data exists, it logs an error and stops execution.
+
+
+3. Ensures Worksheet is Not Empty → Uses XLSX.utils.json_to_sheet(rowData), which correctly formats JSON data into an Excel-compatible worksheet.
+
+
+4. Applies Proper Number Formatting → Uses z: "#,##0.00" to format numeric cells without converting them to text.
+
+
+5. Creates a Valid Workbook → XLSX.utils.book_new() ensures that an empty workbook is created before adding a worksheet.
+
+
+
+
+---
+
+Expected Output in Excel
+
+Right-aligned numbers in Excel.
+
+SUM, AVERAGE, etc. work without issues.
+
+Commas and decimals formatted correctly.
+
+
+
+---
+
+Next Steps
+
+Try this updated code and let me know if the error persists or if you need further modifications!
+
